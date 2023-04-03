@@ -5,11 +5,6 @@
 #include <unistd.h>
 #include <termios.h>
 
-#define GET_UP "\033[A"
-#define GET_DOWN "\033[B"
-#define GET_LEFT "\033[D"
-#define GET_RIGHT "\033[C"
-
 #define get_up 65
 #define get_down 66
 #define get_left 68
@@ -22,13 +17,11 @@
 #define RIGHT 4
 #define BACK 5
 
-int chance = 0;
 int const ROW = 4;
 int const COL = 4;
 int game[4][4] = {0};
 int subm[4][4] = {0};
 
-// 게임 상태 승, 패, 계속
 int const GAME_OVER = 1;
 int const GAME_WIN = 2;
 int const GAME_CONTINUE = 3;
@@ -105,15 +98,27 @@ int createNumber()
 
     return 1;
 }
-
-// 움직이는 과정
+int wall() //벽에 다 몰았을 때 난수생성을 막아주는 함수 막혀있으면 0 뚫려있으면 1
+{
+    int jud = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        for(int j = 0; j < 4; j++)
+        {
+        if(subm[i][j] != game[i][j])
+        jud++;
+        }
+    }
+    if (jud == 0)
+    return 1;
+    else
+    return 0;
+}
 void process(int direction)
 {
-
     switch (direction)
     {
     case UP:
-    int upcount = 0;
         for (int i = 0; i <= 3; i++)
         {
             for (int j = 0; j <= 3; j++)
@@ -126,8 +131,10 @@ void process(int direction)
         {
             for (int crow = row; crow >= 1; --crow)
             {
+
                 for (int col = 0; col < COL; ++col)
                 {
+
                     // last is space
                     if (game[crow - 1][col] == 0)
                     {
@@ -139,12 +146,7 @@ void process(int direction)
                         // merge
                         if (game[crow - 1][col] == game[crow][col])
                         {
-                            ++upcount;
-                            if(upcount == 2)
-                            {
-                                upcount = 0;
-                            goto A;
-                            }
+
                             game[crow - 1][col] *= 2;
                             game[crow][col] = 0;
                         }
@@ -152,7 +154,6 @@ void process(int direction)
                 }
             }
         }
-        A:
         break;
     case DOWN:
         for (int i = 0; i <= 3; i++)
@@ -258,23 +259,23 @@ void process(int direction)
     }
 }
 
-int getch() // getch 함수 만듦
+int getch()
 {
     int c;
     struct termios oldattr, newattr;
 
-    tcgetattr(STDIN_FILENO, &oldattr); // 현재 터미널 설정 읽음
+    tcgetattr(STDIN_FILENO, &oldattr);
     newattr = oldattr;
-    newattr.c_lflag &= ~(ICANON | ECHO);        // CANONICAL과 ECHO 끔
-    newattr.c_cc[VMIN] = 1;                     // 최소 입력 문자 수를 1로 설정
-    newattr.c_cc[VTIME] = 0;                    // 최소 읽기 대기 시간을 0으로 설정
-    tcsetattr(STDIN_FILENO, TCSANOW, &newattr); // 터미널에 설정 입력
-    c = getchar();                              // 키보드 입력 읽음
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); // 원래의 설정으로 복구
+    newattr.c_lflag &= ~(ICANON | ECHO);
+    newattr.c_cc[VMIN] = 1;
+    newattr.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+    c = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
     return c;
 }
 
-int direction() // 키보드 값 받는 함수 위 = 1, 아래 = 2, 오른쪽 = 4, 왼쪽 = 3
+int direction()
 {
     int ch;
 
@@ -297,15 +298,13 @@ int direction() // 키보드 값 받는 함수 위 = 1, 아래 = 2, 오른쪽 = 
             break;
         case get_back:
             return 5;
-            chance++;
             break;
         }
     }
 }
 
 int judgeStatus()
-{ // 게임 상황 : 이기면 2, 지면 1 계속하려면 -1
-    // win the game
+{
     for (int i = 0; i < ROW; ++i)
     {
         for (int j = 0; j < COL; ++j)
@@ -345,44 +344,4 @@ int judgeStatus()
     }
 
     return GAME_OVER;
-}
-
-int main()
-{
-    // 초기 랜덤 난수 생성
-    srand((unsigned int)time(NULL));
-    createNumber();
-    createNumber();
-    mprint();
-    int dir = 0;
-    int status = -1;
-
-    while (1)
-    {
-        dir = direction();
-        status = judgeStatus();
-        if (dir && status == GAME_CONTINUE)
-        {
-            process(dir);
-           if (dir != 5)
-            {
-                createNumber();
-            }
-            mprint();
-        }
-        else if (status == GAME_WIN)
-        {
-            mprint();
-            printf("\n ^_^    You Win    ^_^ \n");
-            break;
-        }
-        else if (status == GAME_OVER)
-        {
-            mprint();
-            printf("\n -_-    You lose    -_- \n");
-            break;
-        }
-    }
-
-    return 0;
 }

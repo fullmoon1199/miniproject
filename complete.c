@@ -98,10 +98,24 @@ int createNumber()
 
     return 1;
 }
-
+int wall() //벽에 다 몰았을 때 난수생성을 막아주는 함수 막혀있으면 0 뚫려있으면 1
+{
+    int jud = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        for(int j = 0; j < 4; j++)
+        {
+        if(subm[i][j] != game[i][j])
+        jud++;
+        }
+    }
+    if (jud == 0)
+    return 1;
+    else
+    return 0;
+}
 void process(int direction)
 {
-
     switch (direction)
     {
     case UP:
@@ -349,7 +363,8 @@ int main()
         if (dir && status == GAME_CONTINUE)
         {
             process(dir);
-            if (dir != 5)
+            wall();            
+            if (dir != 5 && wall() == 0)
             {
                 createNumber();
             }
